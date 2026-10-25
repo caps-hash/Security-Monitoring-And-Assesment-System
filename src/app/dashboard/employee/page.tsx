@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { DashboardPlaceholder } from "@/components/dashboard-placeholder";
 import { requireRole } from "@/lib/auth/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -65,7 +66,15 @@ export default async function EmployeeDashboardPage() {
 
   return (
     <DashboardPlaceholder profile={profile} role="employee">
-      <h2 className="text-lg font-semibold text-slate-900">My profile</h2>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <h2 className="text-lg font-semibold text-slate-900">My profile</h2>
+        <Link
+          className="text-sm font-semibold text-blue-900 hover:text-blue-700"
+          href="/dashboard/employee/settings"
+        >
+          Account settings
+        </Link>
+      </div>
       <dl className="mt-5 grid gap-4 sm:grid-cols-2">
         <div>
           <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -146,6 +155,25 @@ export default async function EmployeeDashboardPage() {
             HR has not added an assignment yet.
           </p>
         )}
+      </div>
+
+      <div className="mt-8 grid gap-4 border-t border-slate-200 pt-6 sm:grid-cols-2">
+        <section className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4">
+          <h2 className="text-sm font-semibold text-slate-900">
+            Assessment status
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            Not available yet. Assessment scheduling and scoring are not part of
+            this phase.
+          </p>
+        </section>
+        <section className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4">
+          <h2 className="text-sm font-semibold text-slate-900">DTR summary</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            Not available yet. Time in and time out will be added in a later
+            phase. No attendance record is stored here.
+          </p>
+        </section>
       </div>
     </DashboardPlaceholder>
   );

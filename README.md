@@ -55,3 +55,11 @@ and must never be placed in a `NEXT_PUBLIC_` variable or exposed to the browser.
   their own profile and assignment.
 - Account deactivation blocks application access; HR can reactivate an account.
 - DTR, assessment scoring, SMS, and reports are not part of Phase 2.
+
+## Phase 3 behavior
+
+- Employees can open their profile dashboard and a separate account-settings page.
+- The profile shows the assigned post, duty location, duty shift, and start date.
+- Assessment status and the DTR summary are labeled placeholders. They do not record attendance or scores.
+- Employees can change their own Supabase password after entering the current password. The minimum length is 6 characters, matching Supabase's default password policy.
+- Employees cannot edit HR-controlled fields such as name, role, status, phone, employee number, or assignment. No new profile-update policy was added.
