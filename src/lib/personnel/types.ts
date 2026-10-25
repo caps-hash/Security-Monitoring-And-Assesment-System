@@ -6,9 +6,12 @@ export type StaffProfile = {
   role: UserRole;
   first_name: string;
   last_name: string;
+  middle_name?: string | null;
   phone: string | null;
   employee_number: string | null;
   is_active: boolean;
+  email_notice_status?: string | null;
+  sms_notice_status?: string | null;
 };
 
 export type PersonnelAssignment = {
@@ -27,6 +30,9 @@ export type LookupItem = {
   is_active: boolean;
   description?: string | null;
   address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  geofence_radius_meters?: number | null;
   start_time?: string;
   end_time?: string;
 };

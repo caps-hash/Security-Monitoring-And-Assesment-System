@@ -23,7 +23,7 @@ export default async function EmployeeSettingsPage() {
         </div>
         <Link
           className="text-sm font-semibold text-blue-900 hover:text-blue-700"
-          href="/dashboard/employee"
+          href="/dashboard/employee/profile"
         >
           Back to profile
         </Link>
@@ -64,8 +64,18 @@ export default async function EmployeeSettingsPage() {
       </dl>
 
       <div className="mt-8 border-t border-slate-200 pt-6">
-        <h3 className="text-base font-semibold text-slate-900">Change password</h3>
-        <PasswordForm />
+        <section
+          aria-labelledby="change-password-heading"
+          id="change-password"
+        >
+          <h3
+            className="text-base font-semibold text-slate-900"
+            id="change-password-heading"
+          >
+            Change password
+          </h3>
+          <PasswordForm />
+        </section>
       </div>
     </DashboardPlaceholder>
   );

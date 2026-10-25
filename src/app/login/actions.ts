@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { mustChangePassword } from "@/lib/auth/password-requirement";
 import { dashboardPath, isUserRole } from "@/lib/auth/roles";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -65,6 +66,10 @@ export async function signIn(
     return {
       error: "This account is inactive. Contact HR for assistance.",
     };
+  }
+
+  if (mustChangePassword(userData.user.app_metadata)) {
+    redirect("/account/password");
   }
 
   redirect(dashboardPath(profile.role));

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DashboardPlaceholder } from "@/components/dashboard-placeholder";
+import { EmployeeAssignmentDetails } from "@/components/employee-assignment-details";
 import { requireRole } from "@/lib/auth/profile";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getOwnAttendanceState } from "@/lib/attendance/queries";
+import { getEmployeeAssignment } from "@/lib/personnel/employee-assignment";
 
 export const metadata: Metadata = {
   title: "Employee dashboard",
@@ -10,169 +12,83 @@ export const metadata: Metadata = {
 
 export default async function EmployeeDashboardPage() {
   const profile = await requireRole("employee");
-  const supabase = await createSupabaseServerClient();
-  const { data: assignment, error: assignmentError } = await supabase
-    .from("personnel_assignments")
-    .select("*")
-    .eq("employee_id", profile.id)
-    .maybeSingle();
-
-  if (assignmentError) {
-    throw new Error(`Unable to load your assignment: ${assignmentError.message}`);
-  }
-
-  let postName: string | null = null;
-  let locationName: string | null = null;
-  let locationAddress: string | null = null;
-  let shiftName: string | null = null;
-  let shiftStart: string | null = null;
-  let shiftEnd: string | null = null;
-
-  if (assignment) {
-    const [postResult, locationResult, shiftResult] = await Promise.all([
-      supabase
-        .from("posts")
-        .select("name")
-        .eq("id", assignment.post_id)
-        .maybeSingle(),
-      supabase
-        .from("duty_locations")
-        .select("name, address")
-        .eq("id", assignment.duty_location_id)
-        .maybeSingle(),
-      supabase
-        .from("duty_shifts")
-        .select("name, start_time, end_time")
-        .eq("id", assignment.duty_shift_id)
-        .maybeSingle(),
-    ]);
-
-    if (postResult.error) {
-      throw new Error(`Unable to load your assigned post: ${postResult.error.message}`);
-    }
-    if (locationResult.error) {
-      throw new Error(`Unable to load your duty location: ${locationResult.error.message}`);
-    }
-    if (shiftResult.error) {
-      throw new Error(`Unable to load your duty shift: ${shiftResult.error.message}`);
-    }
-    postName = postResult.data?.name ?? null;
-    locationName = locationResult.data?.name ?? null;
-    locationAddress = locationResult.data?.address ?? null;
-    shiftName = shiftResult.data?.name ?? null;
-    shiftStart = shiftResult.data?.start_time ?? null;
-    shiftEnd = shiftResult.data?.end_time ?? null;
-  }
+  const [assignment, attendance] = await Promise.all([
+    getEmployeeAssignment(profile.id),
+    getOwnAttendanceState(profile.id),
+  ]);
 
   return (
     <DashboardPlaceholder profile={profile} role="employee">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <h2 className="text-lg font-semibold text-slate-900">My profile</h2>
-        <Link
-          className="text-sm font-semibold text-blue-900 hover:text-blue-700"
-          href="/dashboard/employee/settings"
-        >
-          Account settings
-        </Link>
-      </div>
-      <dl className="mt-5 grid gap-4 sm:grid-cols-2">
-        <div>
-          <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Name
-          </dt>
-          <dd className="mt-1 text-sm text-slate-900">
-            {[profile.first_name, profile.last_name].filter(Boolean).join(" ") ||
-              "Not provided"}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Employee number
-          </dt>
-          <dd className="mt-1 text-sm text-slate-900">
-            {profile.employee_number || "Not provided"}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Email
-          </dt>
-          <dd className="mt-1 text-sm text-slate-900">{profile.email}</dd>
-        </div>
-        <div>
-          <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Phone
-          </dt>
-          <dd className="mt-1 text-sm text-slate-900">
-            {profile.phone || "Not provided"}
-          </dd>
-        </div>
-      </dl>
+      <section aria-labelledby="overview-heading">
+        <h2 className="text-lg font-semibold text-slate-900" id="overview-heading">
+          Employee overview
+        </h2>
+        <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="rounded-lg border border-slate-200 p-4">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Employee number
+            </dt>
+            <dd className="mt-1 text-sm font-medium text-slate-900">
+              {profile.employee_number || "Not provided"}
+            </dd>
+          </div>
+          <div className="rounded-lg border border-slate-200 p-4">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Account status
+            </dt>
+            <dd className="mt-1 text-sm font-medium text-slate-900">
+              {profile.is_active ? "Active" : "Inactive"}
+            </dd>
+          </div>
+        </dl>
+      </section>
 
       <div className="mt-8 border-t border-slate-200 pt-6">
-        <h2 className="text-lg font-semibold text-slate-900">My assignment</h2>
-        {assignment ? (
-          <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div>
-              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Post
-              </dt>
-              <dd className="mt-1 text-sm text-slate-900">
-                {postName ?? "Unavailable"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Duty location
-              </dt>
-              <dd className="mt-1 text-sm text-slate-900">
-                {locationName ?? "Unavailable"}
-                {locationAddress ? ` — ${locationAddress}` : ""}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Duty shift
-              </dt>
-              <dd className="mt-1 text-sm text-slate-900">
-                {shiftName ?? "Unavailable"}
-                {shiftStart && shiftEnd
-                  ? ` (${shiftStart.slice(0, 5)}–${shiftEnd.slice(0, 5)})`
-                  : ""}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Start date at post
-              </dt>
-              <dd className="mt-1 text-sm text-slate-900">
-                {assignment.start_date}
-              </dd>
-            </div>
-          </dl>
-        ) : (
-          <p className="mt-2 text-sm text-slate-600">
-            HR has not added an assignment yet.
-          </p>
-        )}
+        <EmployeeAssignmentDetails assignment={assignment} />
       </div>
 
       <div className="mt-8 grid gap-4 border-t border-slate-200 pt-6 sm:grid-cols-2">
-        <section className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4">
-          <h2 className="text-sm font-semibold text-slate-900">
+        <section
+          aria-labelledby="assessment-heading"
+          className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4"
+        >
+          <h2
+            className="text-sm font-semibold text-slate-900"
+            id="assessment-heading"
+          >
             Assessment status
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            Not available yet. Assessment scheduling and scoring are not part of
-            this phase.
+            Open Assessment Status for your evaluation schedule. Scores and the
+            final decision are not released yet.
           </p>
+          <Link
+            className="mt-3 inline-block text-sm font-semibold text-blue-900 hover:text-blue-700"
+            href="/dashboard/employee/assessment"
+          >
+            View assessment status
+          </Link>
         </section>
-        <section className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4">
-          <h2 className="text-sm font-semibold text-slate-900">DTR summary</h2>
+        <section
+          aria-labelledby="dtr-heading"
+          className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4"
+        >
+          <h2 className="text-sm font-semibold text-slate-900" id="dtr-heading">
+            DTR summary
+          </h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            Not available yet. Time in and time out will be added in a later
-            phase. No attendance record is stored here.
+            {attendance.schemaReady
+              ? attendance.today
+                ? `Today: Time In ${attendance.today.timeInLabel}. Time Out ${attendance.today.timeOutLabel}.`
+                : "No attendance record for today."
+              : "Attendance storage is not ready until supabase/schema.sql is applied."}
           </p>
+          <Link
+            className="mt-3 inline-block text-sm font-semibold text-blue-900 hover:text-blue-700"
+            href="/dashboard/employee/dtr"
+          >
+            View DTR summary
+          </Link>
         </section>
       </div>
     </DashboardPlaceholder>

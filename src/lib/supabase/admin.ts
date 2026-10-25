@@ -7,7 +7,7 @@ export function createSupabaseAdminClient() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (!serviceRoleKey) {
     throw new Error(
-      "Supabase admin configuration error: set SUPABASE_SERVICE_ROLE_KEY on the server to invite staff accounts.",
+      "Supabase admin configuration error: set SUPABASE_SERVICE_ROLE_KEY on the server for account creation and attendance evidence.",
     );
   }
 

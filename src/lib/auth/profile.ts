@@ -18,6 +18,14 @@ export async function getAuthenticatedProfile(): Promise<AuthenticatedProfile> {
   const { data, error } = await supabase.auth.getUser();
 
   if (error) {
+    if (
+      error.name === "AuthSessionMissingError" ||
+      error.status === 400 ||
+      error.status === 401
+    ) {
+      redirect("/login");
+    }
+
     throw new Error(`Unable to verify the current Supabase session: ${error.message}`);
   }
   if (!data.user) {

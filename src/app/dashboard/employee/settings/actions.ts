@@ -1,7 +1,10 @@
 "use server";
 
+import { createClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { getAuthenticatedProfile } from "@/lib/auth/profile";
+import { getSupabaseEnvironment } from "@/lib/supabase/config";
+import type { Database } from "@/lib/supabase/database.types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type PasswordState = {
@@ -51,14 +54,42 @@ export async function changePassword(
     };
   }
 
+  const { url, anonKey } = getSupabaseEnvironment();
+  const verificationClient = createClient<Database>(url, anonKey, {
+    auth: {
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+      persistSession: false,
+    },
+  });
+  const { data: verification, error: reauthenticationError } =
+    await verificationClient.auth.signInWithPassword({
+      email: profile.email,
+      password: currentPassword,
+    });
+
+  if (
+    reauthenticationError ||
+    verification.user?.id !== profile.id ||
+    !verification.session
+  ) {
+    return {
+      error: "The current password could not be verified for this account.",
+      success: null,
+    };
+  }
+
   const supabase = await createSupabaseServerClient();
-  const { error: reauthenticationError } = await supabase.auth.signInWithPassword({
-    email: profile.email,
-    password: currentPassword,
+  const { error: sessionError } = await supabase.auth.setSession({
+    access_token: verification.session.access_token,
+    refresh_token: verification.session.refresh_token,
   });
 
-  if (reauthenticationError) {
-    return { error: "The current password is incorrect.", success: null };
+  if (sessionError) {
+    return {
+      error: "Your session could not be refreshed. Sign in again and retry.",
+      success: null,
+    };
   }
 
   const { error: updateError } = await supabase.auth.updateUser({

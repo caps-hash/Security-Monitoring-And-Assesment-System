@@ -1,107 +1,87 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { DashboardPlaceholder } from "@/components/dashboard-placeholder";
-import { HRManagement } from "@/components/hr-management";
-import { requireRole } from "@/lib/auth/profile";
-import type { AssignmentSummary, HRStaffMember } from "@/lib/personnel/types";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getHrDashboardData } from "@/lib/personnel/hr-dashboard";
 
 export const metadata: Metadata = {
   title: "HR dashboard",
 };
 
 export default async function HrDashboardPage() {
-  const profile = await requireRole("hr");
-  const supabase = await createSupabaseServerClient();
-  const [staffResult, assignmentsResult, postsResult, locationsResult, shiftsResult] =
-    await Promise.all([
-      supabase
-        .from("profiles")
-        .select(
-          "id, email, role, first_name, last_name, phone, employee_number, is_active",
-        )
-        .in("role", ["employee", "supervisor"])
-        .order("last_name"),
-      supabase.from("personnel_assignments").select("*"),
-      supabase.from("posts").select("*").order("name"),
-      supabase.from("duty_locations").select("*").order("name"),
-      supabase.from("duty_shifts").select("*").order("name"),
-    ]);
-
-  if (staffResult.error) {
-    throw new Error(`Unable to load staff profiles: ${staffResult.error.message}`);
-  }
-  if (assignmentsResult.error) {
-    throw new Error(`Unable to load personnel assignments: ${assignmentsResult.error.message}`);
-  }
-  if (postsResult.error) {
-    throw new Error(`Unable to load posts: ${postsResult.error.message}`);
-  }
-  if (locationsResult.error) {
-    throw new Error(`Unable to load duty locations: ${locationsResult.error.message}`);
-  }
-  if (shiftsResult.error) {
-    throw new Error(`Unable to load duty shifts: ${shiftsResult.error.message}`);
-  }
-
-  const supervisors = staffResult.data.filter(
-    (staffMember) => staffMember.role === "supervisor" && staffMember.is_active,
+  const data = await getHrDashboardData();
+  const employees = data.staff.filter(({ profile }) => profile.role === "employee");
+  const supervisors = data.staff.filter(
+    ({ profile }) => profile.role === "supervisor",
   );
-  const supervisorNames = new Map(
-    supervisors.map((supervisor) => [
-      supervisor.id,
-      `${supervisor.first_name} ${supervisor.last_name}`.trim() ||
-        supervisor.email,
-    ]),
-  );
-  const postsById = new Map(postsResult.data.map((post) => [post.id, post]));
-  const locationsById = new Map(
-    locationsResult.data.map((location) => [location.id, location]),
-  );
-  const shiftsById = new Map(shiftsResult.data.map((shift) => [shift.id, shift]));
-  const assignmentsByEmployee = new Map(
-    assignmentsResult.data.map((assignment) => [
-      assignment.employee_id,
-      assignment,
-    ]),
-  );
+  const assignedEmployees = employees.filter((member) => member.assignment).length;
 
-  const staff: HRStaffMember[] = staffResult.data.map((staffMember) => {
-    const assignment = assignmentsByEmployee.get(staffMember.id) ?? null;
-    let assignmentSummary: AssignmentSummary | null = null;
-
-    if (assignment) {
-      const post = postsById.get(assignment.post_id);
-      const location = locationsById.get(assignment.duty_location_id);
-      const shift = shiftsById.get(assignment.duty_shift_id);
-      assignmentSummary = {
-        supervisor_name:
-          supervisorNames.get(assignment.supervisor_id) ?? "Unavailable",
-        post_name: post?.name ?? "Unavailable",
-        location_name: location?.name ?? "Unavailable",
-        location_address: location?.address ?? null,
-        shift_name: shift?.name ?? "Unavailable",
-        shift_start_time: shift?.start_time ?? "",
-        shift_end_time: shift?.end_time ?? "",
-        start_date: assignment.start_date,
-      };
-    }
-
-    return {
-      profile: staffMember,
-      assignment,
-      assignmentSummary,
-    };
-  });
+  const summaries = [
+    {
+      label: "Employees",
+      value: String(employees.length),
+      href: "/dashboard/hr/personnel",
+      detail: "Create, edit, and assign personnel",
+    },
+    {
+      label: "Supervisors",
+      value: String(supervisors.length),
+      href: "/dashboard/hr/supervisors",
+      detail: "Manage supervisor accounts",
+    },
+    {
+      label: "Assigned",
+      value: String(assignedEmployees),
+      href: "/dashboard/hr/personnel",
+      detail: "Employees with a current assignment",
+    },
+    {
+      label: "Duty options",
+      value: String(data.posts.length + data.locations.length + data.shifts.length),
+      href: "/dashboard/hr/duty",
+      detail: "Duty assignment management",
+    },
+    {
+      label: "Attendance",
+      value: "DTR",
+      href: "/dashboard/hr/attendance",
+      detail: "Review time in, time out, and summaries",
+    },
+    {
+      label: "Assessments",
+      value: "Schedule",
+      href: "/dashboard/hr/assessment",
+      detail: "Track three evaluations. No scores yet.",
+    },
+  ];
 
   return (
-    <DashboardPlaceholder profile={profile} role="hr">
-      <HRManagement
-        locations={locationsResult.data}
-        posts={postsResult.data}
-        shifts={shiftsResult.data}
-        staff={staff}
-        supervisors={supervisors}
-      />
+    <DashboardPlaceholder profile={data.profile} role="hr">
+      <section aria-labelledby="overview-heading">
+        <h2 className="text-lg font-semibold text-slate-900" id="overview-heading">
+          HR overview
+        </h2>
+        <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
+          Manage personnel, supervisors, duty setup, attendance, and assessment
+          schedules. Scoring, final decisions, and SMS are not part of this dashboard.
+        </p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          {summaries.map((summary) => (
+            <Link
+              className="rounded-lg border border-slate-200 p-4 transition hover:border-blue-300 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-800"
+              href={summary.href}
+              key={summary.label}
+            >
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                {summary.label}
+              </p>
+              <p className="mt-1 text-2xl font-bold tracking-tight text-slate-950">
+                {summary.value}
+              </p>
+              <p className="mt-1 text-sm text-slate-600">{summary.detail}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
     </DashboardPlaceholder>
   );
 }

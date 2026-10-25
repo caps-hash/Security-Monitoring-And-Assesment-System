@@ -26,7 +26,7 @@ export async function proxy(request: NextRequest) {
   });
 
   const { error } = await supabase.auth.getUser();
-  if (error) {
+  if (error && error.status !== 400 && error.status !== 401) {
     throw new Error(`Unable to refresh the Supabase session: ${error.message}`);
   }
 
@@ -34,5 +34,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/dashboard/:path*", "/account/:path*"],
 };
