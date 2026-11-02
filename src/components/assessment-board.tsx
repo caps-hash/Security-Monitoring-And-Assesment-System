@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import {
   saveAssessmentSettings,
@@ -57,8 +58,8 @@ export function AssessmentBoard({
         Assessment schedule
       </h2>
       <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
-        Statuses come from the saved intervals and tracking workflow. Released scores and the
-        final Passed or Not Passed decision are not part of this phase.
+        Statuses come from the saved intervals and tracking workflow. Open an evaluation to
+        complete the official form. Released scores stay hidden until HR releases them.
       </p>
       {board.message ? <p className="mt-2 text-sm text-amber-800">{board.message}</p> : null}
       <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -130,17 +131,25 @@ export function AssessmentBoard({
               </span>
             </div>
             <p className="mt-2 text-xs text-slate-500">Updated {item.updatedAt}</p>
-            {item.latestNote ? <p className="mt-2 text-sm text-slate-700">{item.latestNote}</p> : null}
+            {actor !== "employee" && item.latestNote ? <p className="mt-2 text-sm text-slate-700">{item.latestNote}</p> : null}
             {actor === "employee" ? (
-              <p className="mt-2 text-sm text-slate-600">Results are not released.</p>
+              <p className="mt-2 text-sm text-slate-600">Unreleased scores, feedback, and reviewer notes are not shown here.</p>
             ) : (
-              <WorkflowForm
-                actor={actor}
-                assessmentId={item.id}
-                status={item.workflowStatus}
-              />
+              <>
+                <Link
+                  className="mt-3 inline-block text-sm font-semibold text-blue-900 hover:text-blue-700"
+                  href={`/dashboard/${actor}/assessment/${item.id}`}
+                >
+                  Open evaluation
+                </Link>
+                <WorkflowForm
+                  actor={actor}
+                  assessmentId={item.id}
+                  status={item.workflowStatus}
+                />
+              </>
             )}
-            <EventList assessmentId={item.id} events={board.events} />
+            {actor !== "employee" ? <EventList assessmentId={item.id} events={board.events} /> : null}
           </article>
         )) : (
           <p className="text-sm text-slate-600">No evaluations match this view.</p>

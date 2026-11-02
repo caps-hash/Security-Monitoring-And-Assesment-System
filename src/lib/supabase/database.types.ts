@@ -354,6 +354,135 @@ export type Database = {
         };
         Relationships: [];
       };
+      evaluation_forms: {
+        Row: {
+          id: string;
+          assessment_id: string;
+          employee_id: string;
+          supervisor_id: string;
+          evaluation_number: number;
+          position_title: string | null;
+          department_section: string | null;
+          evaluation_date: string | null;
+          form_status: "draft" | "submitted";
+          submitted_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      evaluation_responses: {
+        Row: {
+          id: string;
+          form_id: string;
+          criterion_code: string;
+          rating: string | null;
+          comments: string | null;
+          updated_at: string;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      evaluation_files: {
+        Row: {
+          id: string;
+          assessment_id: string;
+          storage_path: string;
+          file_name: string;
+          mime_type: string;
+          byte_size: number;
+          uploaded_by: string;
+          created_at: string;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      evaluation_corrections: {
+        Row: {
+          id: string;
+          assessment_id: string;
+          remarks: string;
+          reviewer_id: string;
+          created_at: string;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      evaluation_results: {
+        Row: {
+          assessment_id: string;
+          official_score: number | null;
+          calculated_rating: string | null;
+          rating_basis: "unconfigured" | "approved_configuration";
+          hr_feedback: string | null;
+          recommendation: string | null;
+          reviewer_id: string | null;
+          reviewed_at: string | null;
+          released_at: string | null;
+          completed_at: string | null;
+          updated_at: string;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      evaluation_acknowledgments: {
+        Row: {
+          id: string;
+          assessment_id: string;
+          kind: "rated_by" | "acknowledge_by" | "noted_by_hro";
+          actor_id: string;
+          acknowledged_at: string;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      final_decisions: {
+        Row: {
+          employee_id: string;
+          decision: "passed" | "not_passed";
+          remark: string | null;
+          issued_by: string;
+          issued_at: string;
+          released_at: string | null;
+          updated_at: string;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      rating_configurations: {
+        Row: {
+          id: number;
+          approved: boolean;
+          source_note: string | null;
+          approved_by: string | null;
+          approved_at: string | null;
+          updated_at: string;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      rating_bands: {
+        Row: {
+          id: string;
+          configuration_id: number;
+          label: string;
+          min_score: number;
+          max_score: number;
+          sort_order: number;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -424,6 +553,84 @@ export type Database = {
           next_status: string;
           note: string;
         };
+        Returns: undefined;
+      };
+      save_evaluation_draft: {
+        Args: {
+          target_assessment_id: string;
+          evaluation_date: string | null;
+          responses: unknown;
+        };
+        Returns: string;
+      };
+      submit_evaluation_form: {
+        Args: {
+          target_assessment_id: string;
+          evaluation_date: string;
+          responses: unknown;
+        };
+        Returns: string;
+      };
+      register_evaluation_file: {
+        Args: {
+          target_assessment_id: string;
+          storage_path: string;
+          file_name: string;
+          mime_type: string;
+          byte_size: number;
+        };
+        Returns: string;
+      };
+      save_evaluation_result_fields: {
+        Args: {
+          target_assessment_id: string;
+          official_score: number;
+          hr_feedback: string;
+          recommendation: string;
+        };
+        Returns: undefined;
+      };
+      approve_rating_configuration: {
+        Args: {
+          bands: unknown;
+          source_note: string;
+          approve_now: boolean;
+        };
+        Returns: undefined;
+      };
+      complete_and_release_evaluation: {
+        Args: {
+          target_assessment_id: string;
+          confirm_release: boolean;
+        };
+        Returns: undefined;
+      };
+      recalculate_released_ratings: {
+        Args: Record<PropertyKey, never>;
+        Returns: number;
+      };
+      issue_final_decision: {
+        Args: {
+          target_employee_id: string;
+          decision: string;
+          remark: string;
+          confirm_decision: boolean;
+        };
+        Returns: undefined;
+      };
+      release_final_decision: {
+        Args: {
+          target_employee_id: string;
+          confirm_release: boolean;
+        };
+        Returns: undefined;
+      };
+      acknowledge_released_evaluation: {
+        Args: { target_assessment_id: string };
+        Returns: undefined;
+      };
+      note_evaluation_as_hro: {
+        Args: { target_assessment_id: string };
         Returns: undefined;
       };
     };

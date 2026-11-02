@@ -73,9 +73,10 @@ test("synchronization is idempotent and preserves completed workflow rows", () =
 });
 
 test("supervisors cannot set HR review statuses", () => {
-  assert.deepEqual(allowedTransitions("scheduled", "supervisor"), ["submitted"]);
+  assert.deepEqual(allowedTransitions("scheduled", "supervisor"), []);
   assert.deepEqual(allowedTransitions("submitted", "supervisor"), []);
-  assert.deepEqual(allowedTransitions("under_review", "hr"), ["returned_for_correction", "completed"]);
+  assert.deepEqual(allowedTransitions("submitted", "hr"), ["under_review", "returned_for_correction"]);
+  assert.deepEqual(allowedTransitions("under_review", "hr"), ["returned_for_correction"]);
   assert.deepEqual(allowedTransitions("completed", "hr"), []);
-  assert.deepEqual(allowedTransitions("returned_for_correction", "supervisor"), ["submitted"]);
+  assert.deepEqual(allowedTransitions("returned_for_correction", "supervisor"), []);
 });

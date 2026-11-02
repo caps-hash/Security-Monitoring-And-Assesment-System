@@ -129,20 +129,14 @@ export function allowedTransitions(
   status: WorkflowStatus,
   actor: "hr" | "supervisor",
 ): WorkflowStatus[] {
-  if (status === "completed") {
-    return [];
-  }
-  if (status === "scheduled" || status === "returned_for_correction") {
-    return ["submitted"];
-  }
-  if (actor !== "hr") {
+  if (actor !== "hr" || status === "completed" || status === "scheduled" || status === "returned_for_correction") {
     return [];
   }
   if (status === "submitted") {
-    return ["under_review"];
+    return ["under_review", "returned_for_correction"];
   }
   if (status === "under_review") {
-    return ["returned_for_correction", "completed"];
+    return ["returned_for_correction"];
   }
   return [];
 }

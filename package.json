@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --test src/lib/attendance/policy.test.ts src/lib/attendance/report.test.ts src/lib/assessment/schedule.test.ts src/lib/personnel/duty-configuration.test.ts src/lib/personnel/staff-invite.test.ts src/lib/personnel/account-notices.test.ts"
+    "test": "node --experimental-strip-types --test src/lib/attendance/policy.test.ts src/lib/attendance/report.test.ts src/lib/assessment/schedule.test.ts src/lib/assessment/evaluation.test.ts src/lib/personnel/duty-configuration.test.ts src/lib/personnel/staff-invite.test.ts src/lib/personnel/account-notices.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { AssessmentBoard } from "@/components/assessment-board";
+import { RatingConfigurationForm } from "@/components/rating-configuration-form";
 import { DashboardPlaceholder } from "@/components/dashboard-placeholder";
 import { requireRole } from "@/lib/auth/profile";
+import { loadRatingConfiguration } from "@/lib/assessment/evaluation-queries";
 import { loadAssessmentBoard } from "@/lib/assessment/queries";
 
 export const metadata: Metadata = {
@@ -15,11 +17,15 @@ export default async function HrAssessmentPage({
 }) {
   const profile = await requireRole("hr");
   const params = await searchParams;
-  const board = await loadAssessmentBoard({ role: "hr", viewerId: profile.id });
+  const [board, configuration] = await Promise.all([
+    loadAssessmentBoard({ role: "hr", viewerId: profile.id }),
+    loadRatingConfiguration(),
+  ]);
 
   return (
     <DashboardPlaceholder profile={profile} role="hr">
       <AssessmentBoard actor="hr" board={board} query={readQuery(params)} />
+      <RatingConfigurationForm configuration={configuration} />
     </DashboardPlaceholder>
   );
 }
