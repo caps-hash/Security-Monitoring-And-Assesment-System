@@ -8,6 +8,8 @@ import { dashboardPath } from "@/lib/auth/roles";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseEnvironment } from "@/lib/supabase/config";
 import type { Database } from "@/lib/supabase/database.types";
+import { consumeRateLimit } from "@/lib/security/access";
+import { recordAudit } from "@/lib/security/audit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type RequiredPasswordState = {
@@ -47,6 +49,10 @@ export async function replaceTemporaryPassword(
     };
   }
 
+  if (!consumeRateLimit(`password:${profile.id}`, 5, 15 * 60 * 1000)) {
+    return { error: "Too many password attempts. Wait and try again." };
+  }
+
   const { url, anonKey } = getSupabaseEnvironment();
   const verificationClient = createClient<Database>(url, anonKey, {
     auth: {
@@ -83,6 +89,14 @@ export async function replaceTemporaryPassword(
   if (updateError) {
     return { error: "The password could not be updated. Try a different password." };
   }
+
+  await recordAudit({
+    actorId: profile.id,
+    actionType: "password.changed",
+    recordType: "profile",
+    recordId: profile.id,
+    summary: "Temporary password was replaced.",
+  });
 
   const supabase = await createSupabaseServerClient();
   const { error: refreshError } = await supabase.auth.signInWithPassword({

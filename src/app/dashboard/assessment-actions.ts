@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getAuthenticatedProfile } from "@/lib/auth/profile";
 import { allowedTransitions, validateAssessmentSettings, type WorkflowStatus } from "@/lib/assessment/schedule";
+import { recordAudit } from "@/lib/security/audit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type AssessmentActionState = { error: string | null; success: string | null };
@@ -109,6 +110,17 @@ export async function setAssessmentWorkflow(
   if (error) {
     return failed(schemaMessage(error.message));
   }
+  await recordAudit({
+    actorId: profile.id,
+    actionType: nextStatus === "returned_for_correction" ? "evaluation.returned" : "assessment.status_updated",
+    recordType: "assessment",
+    recordId: assessmentId,
+    summary:
+      nextStatus === "returned_for_correction"
+        ? "Evaluation was returned for correction."
+        : "Assessment tracking status was updated.",
+    changes: { from: current.data.workflow_status, to: nextStatus },
+  });
   revalidateAssessment();
   return { error: null, success: "Assessment tracking status updated. No score or final decision was recorded." };
 }

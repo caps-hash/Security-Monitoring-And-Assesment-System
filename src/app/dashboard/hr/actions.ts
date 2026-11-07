@@ -22,10 +22,13 @@ import {
   validateStaffEmail,
   validateStaffInvite,
 } from "@/lib/personnel/staff-invite";
+import { deliverAccountEmail } from "@/lib/notifications/deliver";
+import { consumeRateLimit } from "@/lib/security/access";
+import { recordAudit } from "@/lib/security/audit";
 import {
-  deliverAccountEmail,
-  deliverAccountSms,
-} from "@/lib/notifications/deliver";
+  accountSetupAlreadySent,
+  sendAccountSetupSms,
+} from "@/lib/notifications/sms-dispatch";
 
 export type ActionState = {
   error: string | null;
@@ -77,7 +80,10 @@ export async function createStaffAccount(
   _previousState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireHr();
+  const actor = await requireHr();
+  if (!consumeRateLimit(`account-create:${actor.id}`, 8, 10 * 60 * 1000)) {
+    return failed("Too many account creation attempts. Wait and try again.");
+  }
 
   const email = field(formData, "email").toLowerCase();
   const firstName = field(formData, "first_name");
@@ -175,17 +181,14 @@ export async function createStaffAccount(
     return failed(`The profile could not be saved, so the account was removed: ${message}`);
   }
 
-  const smsNotice = smsProviderName()
-    ? await deliverAccountSms({
-        phone: normalizedPhone,
-        employeeNumber,
-        temporaryPassword,
-      })
-    : {
-        status: "not_configured" as const,
-        detail:
-          "SMS is not configured. Set server-only TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_FROM, or SEMAPHORE_API_KEY.",
-      };
+  const smsNotice = await sendAccountSetupSms({
+    userId: createdUserId,
+    phone: normalizedPhone,
+    employeeNumber,
+    temporaryPassword,
+    role,
+    retry: false,
+  });
   const invalidationWarning =
     smsNotice.status === "failed"
       ? await invalidateUndeliveredPassword(createdUserId, { must_change_password: true })
@@ -211,6 +214,14 @@ export async function createStaffAccount(
     .filter(Boolean)
     .join(" ");
 
+  await recordAudit({
+    actorId: actor.id,
+    actionType: "account.created",
+    recordType: "profile",
+    recordId: createdUserId,
+    summary: `Created ${role} account ${employeeNumber}.`,
+    changes: { role, employeeNumber, email },
+  });
   revalidatePath("/dashboard/hr", "layout");
   const created = accountCreatedMessage(role, email, employeeNumber);
   if (warning) {
@@ -252,17 +263,24 @@ export async function retryStaffNotices(
   const emailNeeds =
     profile.email_notice_status === "failed" ||
     profile.email_notice_status === "not_configured";
-  const smsNeeds =
+  let smsNeeds =
     profile.sms_notice_status === "failed" ||
     profile.sms_notice_status === "not_configured";
-  if (!emailNeeds && !smsNeeds) {
-    return succeeded("Email and SMS were already sent. Nothing was retried.");
-  }
-
   let smsNotice: NoticeResult = {
     status: isNoticeStatus(profile.sms_notice_status) ? profile.sms_notice_status : "failed",
     detail: "SMS was not retried.",
   };
+  if (smsNeeds && (await accountSetupAlreadySent(profile.id))) {
+    await admin.from("profiles").update({ sms_notice_status: "sent" }).eq("id", profile.id);
+    smsNeeds = false;
+    smsNotice = {
+      status: "sent",
+      detail: "Account setup SMS was already accepted. It was not sent again.",
+    };
+  }
+  if (!emailNeeds && !smsNeeds) {
+    return succeeded("Email and SMS were already sent. Nothing was retried.");
+  }
   if (smsNeeds) {
     if (!profile.phone) {
       smsNotice = { status: "failed", detail: "This profile has no mobile number." };
@@ -288,10 +306,13 @@ export async function retryStaffNotices(
       if (passwordError) {
         return failed("Could not prepare a new temporary password. No SMS was sent.");
       }
-      smsNotice = await deliverAccountSms({
+      smsNotice = await sendAccountSetupSms({
+        userId: profile.id,
         phone: profile.phone,
         employeeNumber: profile.employee_number,
         temporaryPassword,
+        role: profile.role,
+        retry: true,
       });
       if (smsNotice.status !== "sent") {
         const invalidationWarning = await invalidateUndeliveredPassword(
@@ -355,7 +376,7 @@ export async function updateStaffEmail(
   _previousState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireHr();
+  const actor = await requireHr();
 
   const id = field(formData, "id");
   const email = field(formData, "email").toLowerCase();
@@ -437,6 +458,14 @@ export async function updateStaffEmail(
     return succeeded(change.message);
   }
   if (change.status === "pending") {
+    await recordAudit({
+      actorId: actor.id,
+      actionType: "profile.email_updated",
+      recordType: "profile",
+      recordId: profile.id,
+      summary: "Staff email change is pending confirmation.",
+      changes: { status: "pending" },
+    });
     return succeeded(change.message);
   }
   if (change.status === "not-applied") {
@@ -465,6 +494,14 @@ export async function updateStaffEmail(
     );
   }
 
+  await recordAudit({
+    actorId: actor.id,
+    actionType: "profile.email_updated",
+    recordType: "profile",
+    recordId: profile.id,
+    summary: "Staff email address was updated.",
+    changes: { status: "applied" },
+  });
   revalidatePath("/dashboard/hr", "layout");
   revalidatePath("/dashboard/supervisor");
   revalidatePath("/dashboard/employee");
@@ -475,7 +512,7 @@ export async function updateStaffProfile(
   _previousState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireHr();
+  const actor = await requireHr();
 
   const id = field(formData, "id");
   const firstName = field(formData, "first_name");
@@ -514,6 +551,14 @@ export async function updateStaffProfile(
     return failed("The staff account was not found.");
   }
 
+  await recordAudit({
+    actorId: actor.id,
+    actionType: "profile.updated",
+    recordType: "profile",
+    recordId: id,
+    summary: "Staff profile details were updated.",
+    changes: { phoneChanged: phone ? "yes" : "no" },
+  });
   revalidatePath("/dashboard/hr", "layout");
   revalidatePath("/dashboard/supervisor");
   revalidatePath("/dashboard/employee");
@@ -551,6 +596,14 @@ export async function setStaffActive(
     return failed("The staff account was not found.");
   }
 
+  await recordAudit({
+    actorId: actor.id,
+    actionType: activeValue === "true" ? "account.activated" : "account.deactivated",
+    recordType: "profile",
+    recordId: id,
+    summary: activeValue === "true" ? "Staff account activated." : "Staff account deactivated.",
+    changes: { active: activeValue },
+  });
   revalidatePath("/dashboard/hr", "layout");
   revalidatePath("/dashboard/supervisor");
   revalidatePath("/dashboard/employee");
@@ -563,7 +616,7 @@ export async function saveAssignment(
   _previousState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireHr();
+  const actor = await requireHr();
 
   const employeeId = field(formData, "employee_id");
   const supervisorId = field(formData, "supervisor_id");
@@ -609,6 +662,14 @@ export async function saveAssignment(
     return failed(`Could not save the assignment: ${error.message}`);
   }
 
+  await recordAudit({
+    actorId: actor.id,
+    actionType: "assignment.saved",
+    recordType: "assignment",
+    recordId: employeeId,
+    summary: "Personnel assignment was saved.",
+    changes: { supervisorId, postId, startDate },
+  });
   revalidatePath("/dashboard/hr", "layout");
   revalidatePath("/dashboard/supervisor");
   revalidatePath("/dashboard/employee");

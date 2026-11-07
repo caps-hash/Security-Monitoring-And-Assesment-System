@@ -34,6 +34,21 @@ const navigationItems: SidebarNavItem[] = [
     href: "/dashboard/hr/assessment",
     icon: "assessment",
   },
+  {
+    label: "SMS notifications",
+    href: "/dashboard/hr/sms",
+    icon: "sms",
+  },
+  {
+    label: "Reports",
+    href: "/dashboard/hr/reports",
+    icon: "reports",
+  },
+  {
+    label: "Audit log",
+    href: "/dashboard/hr/audit",
+    icon: "audit",
+  },
 ];
 
 export function HrSidebar({ children }: { children: ReactNode }) {

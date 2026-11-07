@@ -6,9 +6,14 @@ import {
   missingEmailConfigurationDetail,
   missingSmsConfigurationDetail,
   smsProviderName,
-  toE164,
   type NoticeResult,
 } from "@/lib/personnel/account-notices";
+import {
+  parseProviderPayload,
+  philippineMobileE164,
+  providerPhone,
+  type ProviderAttempt,
+} from "@/lib/notifications/sms-policy";
 
 // ponytail: fetch the configured provider directly. No email or SMS SDK until one is actually used.
 
@@ -60,27 +65,80 @@ export async function deliverAccountSms(input: {
   employeeNumber: string;
   temporaryPassword: string;
 }): Promise<NoticeResult> {
-  const provider = smsProviderName();
-  if (!provider) {
+  const sent = await sendConfiguredSms({
+    phone: input.phone,
+    body: buildAccountSms(input),
+  });
+  if (sent.status === "not_configured") {
     return { status: "not_configured", detail: missingSmsConfigurationDetail() };
   }
+  if (sent.status === "invalid_phone") {
+    return { status: "failed", detail: "The mobile number is not a valid Philippine mobile number." };
+  }
+  if (sent.status !== "sent") {
+    return {
+      status: "failed",
+      detail: sent.errorMessage || "SMS delivery failed.",
+    };
+  }
+  return { status: "sent", detail: "SMS accepted by the provider. Delivery is not confirmed until a callback." };
+}
 
-  const body = buildAccountSms(input);
+export type ConfiguredSmsResult = {
+  status: "sent" | "failed" | "rejected" | "not_configured" | "invalid_phone";
+  provider: "twilio" | "semaphore" | null;
+  providerMessageId: string | null;
+  errorMessage: string | null;
+  retryable: boolean;
+};
+
+export async function sendConfiguredSms(input: {
+  phone: string;
+  body: string;
+}): Promise<ConfiguredSmsResult> {
+  const provider = smsProviderName();
+  if (!provider) {
+    return {
+      status: "not_configured",
+      provider: null,
+      providerMessageId: null,
+      errorMessage: missingSmsConfigurationDetail(),
+      retryable: true,
+    };
+  }
+  const e164 = philippineMobileE164(input.phone);
+  if (!e164) {
+    return {
+      status: "invalid_phone",
+      provider,
+      providerMessageId: null,
+      errorMessage: "The mobile number is not a valid Philippine mobile number.",
+      retryable: false,
+    };
+  }
 
   try {
     const response =
       provider === "twilio"
-        ? await sendTwilio(input.phone, body)
-        : await sendSemaphore(input.phone, body);
-    if (!response.ok) {
-      return {
-        status: "failed",
-        detail: `SMS delivery failed (provider status ${response.status}).`,
-      };
-    }
-    return { status: "sent", detail: "SMS sent." };
+        ? await sendTwilio(e164, input.body)
+        : await sendSemaphore(e164, input.body);
+    const bodyText = await response.text();
+    const parsed: ProviderAttempt = parseProviderPayload(provider, response.status, bodyText);
+    return {
+      status: parsed.outcome,
+      provider,
+      providerMessageId: parsed.providerMessageId,
+      errorMessage: parsed.errorMessage,
+      retryable: parsed.retryable,
+    };
   } catch {
-    return { status: "failed", detail: "The SMS provider could not be reached." };
+    return {
+      status: "failed",
+      provider,
+      providerMessageId: null,
+      errorMessage: "The SMS provider could not be reached.",
+      retryable: false,
+    };
   }
 }
 
@@ -90,7 +148,7 @@ async function sendTwilio(phone: string, body: string): Promise<Response> {
   const from = process.env.TWILIO_FROM?.trim() ?? "";
   const credentials = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
   const payload = new URLSearchParams({
-    To: toE164(phone),
+    To: providerPhone(phone, "twilio"),
     From: from,
     Body: body,
   });
@@ -112,7 +170,7 @@ async function sendTwilio(phone: string, body: string): Promise<Response> {
 async function sendSemaphore(phone: string, body: string): Promise<Response> {
   const payload = new URLSearchParams({
     apikey: process.env.SEMAPHORE_API_KEY?.trim() ?? "",
-    number: toE164(phone).replace(/^\+/, ""),
+    number: providerPhone(phone, "semaphore"),
     message: body,
   });
   const sender = process.env.SEMAPHORE_SENDER?.trim();

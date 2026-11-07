@@ -6,6 +6,12 @@ import { EVALUATION_CRITERIA, type EvaluationRating } from "@/lib/assessment/cri
 import { inspectEvaluationFile } from "@/lib/assessment/files";
 import { validateRatingBands } from "@/lib/assessment/scoring";
 import { getAuthenticatedProfile } from "@/lib/auth/profile";
+import {
+  notifyEvaluationSubmitted,
+  notifyReleasedEvaluation,
+  notifyReleasedFinalDecision,
+} from "@/lib/notifications/sms-dispatch";
+import { recordAudit } from "@/lib/security/audit";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -71,8 +77,20 @@ export async function submitEvaluationForm(
   if (error) {
     return failed(schemaMessage(error.message));
   }
+  const sms = await notifyEvaluationSubmitted(
+    assessmentId,
+    `${profile.first_name} ${profile.last_name}`.trim(),
+  );
+  await recordAudit({
+    actorId: profile.id,
+    actionType: "evaluation.submitted",
+    recordType: "assessment",
+    recordId: assessmentId,
+    summary: "Supervisor submitted an evaluation for HR review.",
+    changes: { evaluationDate },
+  });
   revalidateEvaluation(assessmentId);
-  return { error: null, success: "Evaluation submitted. HR can now review it." };
+  return { error: null, success: `Evaluation submitted. HR can now review it. ${sms}` };
 }
 
 export async function uploadEvaluationFile(
@@ -211,6 +229,14 @@ export async function saveOfficialResult(
   if (error) {
     return failed(schemaMessage(error.message));
   }
+  await recordAudit({
+    actorId: profile.id,
+    actionType: "evaluation.score_saved",
+    recordType: "assessment",
+    recordId: assessmentId,
+    summary: "HR saved an official evaluation score. It is not released.",
+    changes: { released: "no" },
+  });
   revalidateEvaluation(assessmentId);
   return { error: null, success: "Official result saved. It is not released yet." };
 }
@@ -275,8 +301,16 @@ export async function releaseEvaluation(
   if (error) {
     return failed(schemaMessage(error.message));
   }
+  const sms = await notifyReleasedEvaluation(assessmentId);
+  await recordAudit({
+    actorId: profile.id,
+    actionType: "evaluation.released",
+    recordType: "assessment",
+    recordId: assessmentId,
+    summary: "HR released a completed evaluation.",
+  });
   revalidateEvaluation(assessmentId);
-  return { error: null, success: "Evaluation completed and the result was released." };
+  return { error: null, success: `Evaluation completed and the result was released. ${sms}` };
 }
 
 export async function recalculateRatings(
@@ -322,6 +356,14 @@ export async function issueFinalDecision(
   if (error) {
     return failed(schemaMessage(error.message));
   }
+  await recordAudit({
+    actorId: profile.id,
+    actionType: "decision.saved",
+    recordType: "profile",
+    recordId: employeeId,
+    summary: "HR saved a final decision. It is not released.",
+    changes: { decision, released: "no" },
+  });
   revalidateEvaluation();
   return { error: null, success: "Final decision saved. It is hidden until HR releases it." };
 }
@@ -346,8 +388,19 @@ export async function releaseFinalDecision(
   if (error) {
     return failed(schemaMessage(error.message));
   }
+  const sms = await notifyReleasedFinalDecision(employeeId);
+  await recordAudit({
+    actorId: profile.id,
+    actionType: "decision.released",
+    recordType: "profile",
+    recordId: employeeId,
+    summary: "HR released a final decision.",
+  });
   revalidateEvaluation();
-  return { error: null, success: "Final decision released to the employee and assigned supervisor." };
+  return {
+    error: null,
+    success: `Final decision released to the employee and assigned supervisor. ${sms}`,
+  };
 }
 
 export async function acknowledgeEvaluation(

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { evidencePathAllowed } from "@/lib/security/access";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
@@ -368,7 +369,11 @@ async function presentRecords(
     ]),
   );
   const signed = await signEvidence(
-    rows.flatMap((row) => [row.time_in_photo_path, row.time_out_photo_path ?? ""]),
+    rows.flatMap((row) =>
+      [row.time_in_photo_path, row.time_out_photo_path ?? ""].filter((path) =>
+        evidencePathAllowed(row.employee_id, path),
+      ),
+    ),
   );
 
   return rows.map((row) => {

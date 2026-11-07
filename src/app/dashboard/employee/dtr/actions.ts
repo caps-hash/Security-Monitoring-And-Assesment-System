@@ -16,6 +16,7 @@ import {
   sniffJpeg,
 } from "@/lib/attendance/policy";
 import { isMissingAttendanceSchema } from "@/lib/attendance/queries";
+import { recordAudit } from "@/lib/security/audit";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -211,6 +212,14 @@ export async function recordAttendance(
       return failed("database_failed", schemaOrRetry(error?.message ?? "insert failed"));
     }
 
+    await recordAudit({
+      actorId: profile.id,
+      actionType: "attendance.time_in",
+      recordType: "attendance",
+      recordId,
+      summary: "Time In was recorded.",
+      changes: { verification: verified.verification ?? "" },
+    });
     revalidateAttendance();
     return {
       ok: true,
@@ -246,6 +255,14 @@ export async function recordAttendance(
     );
   }
 
+  await recordAudit({
+    actorId: profile.id,
+    actionType: "attendance.time_out",
+    recordType: "attendance",
+    recordId,
+    summary: "Time Out was recorded.",
+    changes: { verification: verified.verification ?? "" },
+  });
   revalidateAttendance();
   return {
     ok: true,

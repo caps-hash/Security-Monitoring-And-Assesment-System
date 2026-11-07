@@ -15,7 +15,10 @@ export type SidebarIconName =
   | "settings"
   | "password"
   | "personnel"
-  | "duty";
+  | "duty"
+  | "sms"
+  | "reports"
+  | "audit";
 
 export type SidebarNavItem = {
   label: string;
@@ -35,6 +38,9 @@ const iconPaths: Record<SidebarIconName | "logout", string> = {
   personnel:
     "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75",
   duty: "M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z M12 10.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z",
+  sms: "M4 5h16v10H7l-3 3z",
+  reports: "M4 4h16v16H4z M8 9h8 M8 13h8 M8 17h5",
+  audit: "M8 4h8v4H8z M6 8h12v12H6z M9 12h6 M9 16h4",
   logout: "M10 17l5-5-5-5 M15 12H3 M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6",
 };
 
@@ -86,7 +92,7 @@ export function RoleSidebar({
 
       <aside
         aria-label={navigationLabel}
-        className={`${mobileOpen ? "z-50 flex w-72" : "hidden"} fixed top-0 left-0 h-dvh flex-col overflow-hidden bg-slate-950 p-4 text-slate-100 shadow-lg md:z-30 md:flex ${collapsed ? "md:w-20" : "md:w-64"}`}
+        className={`print:hidden ${mobileOpen ? "z-50 flex w-72" : "hidden"} fixed top-0 left-0 h-dvh flex-col overflow-hidden bg-slate-950 p-4 text-slate-100 shadow-lg md:z-30 md:flex ${collapsed ? "md:w-20" : "md:w-64"}`}
         id={menuId}
       >
         <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-4">
@@ -148,9 +154,9 @@ export function RoleSidebar({
         </form>
       </aside>
       <div
-        className={`flex min-h-dvh flex-col md:h-dvh md:overflow-hidden ${collapsed ? "md:pl-20" : "md:pl-64"}`}
+        className={`flex min-h-dvh flex-col print:pl-0 md:h-dvh md:overflow-hidden ${collapsed ? "md:pl-20" : "md:pl-64"}`}
       >
-        <header className="shrink-0 border-b border-slate-200 bg-white">
+        <header className="shrink-0 border-b border-slate-200 bg-white print:hidden">
           <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
             <Link className="text-sm font-bold tracking-tight text-blue-950" href="/">
               GGF <span className="font-medium text-slate-500">/ Security Personnel</span>
@@ -160,7 +166,7 @@ export function RoleSidebar({
         </header>
         <div className="min-w-0 flex-1 md:overflow-y-auto">
           <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8">
-            <div className="mb-4 flex items-center justify-between md:hidden">
+            <div className="print-hidden mb-4 flex items-center justify-between md:hidden">
               <span className="text-sm font-semibold text-slate-700">{navigationLabel}</span>
               <button
                 aria-controls={menuId}

@@ -483,6 +483,181 @@ export type Database = {
         Update: Record<string, never>;
         Relationships: [];
       };
+      sms_settings: {
+        Row: {
+          id: number;
+          reminder_interval_days: number | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          id?: number;
+          reminder_interval_days?: number | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          reminder_interval_days?: number | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
+      sms_notifications: {
+        Row: {
+          id: string;
+          idempotency_key: string;
+          recipient_phone: string | null;
+          recipient_user_id: string | null;
+          employee_id: string | null;
+          recipient_role: "hr" | "supervisor" | "employee";
+          notification_type:
+            | "account_setup"
+            | "evaluation_reminder_due_soon"
+            | "evaluation_reminder_due"
+            | "evaluation_reminder_overdue"
+            | "evaluation_submitted"
+            | "assessment_result"
+            | "final_decision"
+            | "sms_failure";
+          related_record_id: string | null;
+          message_content: string;
+          provider: string | null;
+          provider_message_id: string | null;
+          delivery_status:
+            | "pending"
+            | "processing"
+            | "sent"
+            | "delivered"
+            | "failed"
+            | "rejected"
+            | "not_configured";
+          provider_response: unknown;
+          error_message: string | null;
+          attempt_count: number;
+          retryable: boolean;
+          created_at: string;
+          sent_at: string | null;
+          delivered_at: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          idempotency_key: string;
+          recipient_phone?: string | null;
+          recipient_user_id?: string | null;
+          employee_id?: string | null;
+          recipient_role: "hr" | "supervisor" | "employee";
+          notification_type:
+            | "account_setup"
+            | "evaluation_reminder_due_soon"
+            | "evaluation_reminder_due"
+            | "evaluation_reminder_overdue"
+            | "evaluation_submitted"
+            | "assessment_result"
+            | "final_decision"
+            | "sms_failure";
+          related_record_id?: string | null;
+          message_content: string;
+          provider?: string | null;
+          provider_message_id?: string | null;
+          delivery_status:
+            | "pending"
+            | "processing"
+            | "sent"
+            | "delivered"
+            | "failed"
+            | "rejected"
+            | "not_configured";
+          provider_response?: unknown;
+          error_message?: string | null;
+          attempt_count?: number;
+          retryable?: boolean;
+          created_at?: string;
+          sent_at?: string | null;
+          delivered_at?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          recipient_phone?: string | null;
+          delivery_status?:
+            | "pending"
+            | "processing"
+            | "sent"
+            | "delivered"
+            | "failed"
+            | "rejected"
+            | "not_configured";
+          provider?: string | null;
+          provider_message_id?: string | null;
+          provider_response?: unknown;
+          error_message?: string | null;
+          attempt_count?: number;
+          retryable?: boolean;
+          sent_at?: string | null;
+          delivered_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      performance_ranking_settings: {
+        Row: {
+          id: number;
+          approved: boolean;
+          assessment_weight: number | null;
+          attendance_weight: number | null;
+          source_note: string | null;
+          approved_by: string | null;
+          approved_at: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          id?: number;
+          approved?: boolean;
+          assessment_weight?: number | null;
+          attendance_weight?: number | null;
+          source_note?: string | null;
+          approved_by?: string | null;
+          approved_at?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          approved?: boolean;
+          assessment_weight?: number | null;
+          attendance_weight?: number | null;
+          source_note?: string | null;
+          approved_by?: string | null;
+          approved_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      audit_logs: {
+        Row: {
+          id: string;
+          actor_id: string | null;
+          action_type: string;
+          record_type: string;
+          record_id: string | null;
+          summary: string;
+          changes: Record<string, string>;
+          idempotency_key: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          actor_id?: string | null;
+          action_type: string;
+          record_type: string;
+          record_id?: string | null;
+          summary: string;
+          changes?: Record<string, string>;
+          idempotency_key?: string | null;
+          created_at?: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

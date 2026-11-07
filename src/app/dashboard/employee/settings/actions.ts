@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { getAuthenticatedProfile } from "@/lib/auth/profile";
 import { getSupabaseEnvironment } from "@/lib/supabase/config";
 import type { Database } from "@/lib/supabase/database.types";
+import { consumeRateLimit } from "@/lib/security/access";
+import { recordAudit } from "@/lib/security/audit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type PasswordState = {
@@ -52,6 +54,10 @@ export async function changePassword(
       error: "Choose a new password that is different from your current password.",
       success: null,
     };
+  }
+
+  if (!consumeRateLimit(`password:${profile.id}`, 5, 15 * 60 * 1000)) {
+    return { error: "Too many password attempts. Wait and try again.", success: null };
   }
 
   const { url, anonKey } = getSupabaseEnvironment();
@@ -103,6 +109,13 @@ export async function changePassword(
     };
   }
 
+  await recordAudit({
+    actorId: profile.id,
+    actionType: "password.changed",
+    recordType: "profile",
+    recordId: profile.id,
+    summary: "Employee password was changed.",
+  });
   revalidatePath("/dashboard/employee/settings");
   return {
     error: null,

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { DashboardPlaceholder } from "@/components/dashboard-placeholder";
 import { getHrDashboardData } from "@/lib/personnel/hr-dashboard";
+import { loadHrAnalytics } from "@/lib/reports/load";
 
 export const metadata: Metadata = {
   title: "HR dashboard",
@@ -14,6 +15,7 @@ export default async function HrDashboardPage() {
     ({ profile }) => profile.role === "supervisor",
   );
   const assignedEmployees = employees.filter((member) => member.assignment).length;
+  const analytics = await loadHrAnalytics();
 
   const summaries = [
     {
@@ -48,9 +50,23 @@ export default async function HrDashboardPage() {
     },
     {
       label: "Assessments",
-      value: "Schedule",
+      value: analytics ? String(analytics.overdue) : "Schedule",
       href: "/dashboard/hr/assessment",
-      detail: "Track three evaluations. No scores yet.",
+      detail: analytics ? "Overdue evaluations under the Phase 5 status rules" : "Track evaluations and released results",
+    },
+    {
+      label: "SMS",
+      value: "Logs",
+      href: "/dashboard/hr/sms",
+      detail: "Review notification history and failures",
+    },
+    {
+      label: "Reports",
+      value: analytics ? String(analytics.completed) : "Analytics",
+      href: "/dashboard/hr/reports",
+      detail: analytics
+        ? `${analytics.passed} passed, ${analytics.notPassed} not passed, ${analytics.potentialAbsences} potential absences this month`
+        : "Personnel, DTR, assessments, and SMS history",
     },
   ];
 
@@ -62,7 +78,7 @@ export default async function HrDashboardPage() {
         </h2>
         <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
           Manage personnel, supervisors, duty setup, attendance, and assessment
-          schedules. Scoring, final decisions, and SMS are not part of this dashboard.
+          schedules. SMS history is on SMS notifications.
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           {summaries.map((summary) => (

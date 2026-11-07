@@ -97,3 +97,33 @@ variable or exposed to the browser.
 - Synchronizing schedules creates Evaluation 1, 2, and 3 from the assignment start date. Repeating it does not duplicate rows or overwrite submitted, reviewed, returned, or completed evaluations.
 - Date-based statuses are Upcoming, Due Soon, Due, and Overdue. Workflow statuses are Submitted, Under Review, Returned for Correction, and Completed. Supervisors can record submission for assigned personnel only. HR records review, return, and tracking completion. This does not upload forms, enter scores, or issue Passed / Not Passed.
 - Employees see only their own schedule. Results stay unreleased.
+
+## Phase 7 behavior
+
+- SMS is sent only from server-side events: account creation, the reminder check, evaluation submission, released evaluation results, and released final decisions. Saving an unpublished score or an unreleased decision does not send SMS.
+- Twilio is used when `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_FROM` are set. Otherwise Semaphore is used when `SEMAPHORE_API_KEY` is set. Neither provider is assumed to be configured, and provider acceptance is not treated as confirmed delivery.
+- Every attempt is stored in `sms_notifications`. The account-setup log does not store the temporary password. Duplicate event keys are rejected by a unique idempotency key.
+- HR saves the reminder interval on SMS notifications. No interval is assumed. The protected job is `POST /api/sms/reminders` with `Authorization: Bearer` set to `SMS_CRON_SECRET` or `CRON_SECRET`. Far-future upcoming evaluations are not texted; due-soon, due, and overdue reminders go to the current supervisor only.
+- Delivery callbacks go to `POST /api/sms/webhook` with `x-sms-webhook-secret` or `?token=` set to `SMS_WEBHOOK_SECRET`. Twilio signatures are also accepted. Run [`supabase/migrations/20261108_phase7_sms_notifications.sql`](./supabase/migrations/20261108_phase7_sms_notifications.sql) or re-run [`supabase/schema.sql`](./supabase/schema.sql) before using SMS logs.
+- Real provider delivery is not complete until those credentials and the callback URL are configured. Automated tests mock the provider decision logic and do not send SMS.
+
+## Phase 8 behavior
+
+- HR reports are at `/dashboard/hr/reports`. Personnel, DTR, assessment, Passed / Not Passed, overdue, supervisor activity, SMS history, and top performers reuse the existing attendance summary and Phase 5 assessment status. A missing attendance record is a potential absence, not an official absence.
+- Passed and Not Passed include released final decisions only. Unreleased scores stay hidden. Reports do not send SMS.
+- Combined ranking is not calculated until HR saves and approves weights totaling 100% in `performance_ranking_settings`. Missing assessment or attendance data is not treated as zero. Run [`supabase/migrations/20261109_phase8_ranking_settings.sql`](./supabase/migrations/20261109_phase8_ranking_settings.sql) or re-run [`supabase/schema.sql`](./supabase/schema.sql) before saving weights.
+- Print uses the browser print dialog. CSV, Excel, and PDF downloads are HR-only at `/api/reports/export`.
+
+## Phase 9 behavior
+
+- HR can read the audit log at `/dashboard/hr/audit`. Successful account, profile, assignment, evaluation, decision, attendance, password, and SMS events are recorded without passwords, tokens, photo paths, or coordinates. A missing audit table does not undo the original action.
+- Dashboard and account routes reject anonymous and inactive sessions in `src/proxy.ts` and send a signed-in user away from another role's pages. Page layouts still enforce the role.
+- Privileged profile columns cannot be changed by a normal authenticated session. Account creation and password changes are rate limited in the server process.
+- Run [`supabase/migrations/20261110_phase9_audit_logs.sql`](./supabase/migrations/20261110_phase9_audit_logs.sql) or re-run [`supabase/schema.sql`](./supabase/schema.sql) before the audit page can load. Phase 7 and Phase 8 SQL still need to be applied if those features were not migrated.
+
+## Phase 10 behavior
+
+- Deployment preparation is documented in [docs/deployment.md](docs/deployment.md). System, user, and admin guides are in [docs/](docs/).
+- `.env.example` lists the required and optional production variables with placeholders only.
+- The production response removes the `X-Powered-By` header and sets nosniff, referrer, frame, and camera/location permission headers.
+- Vercel Cron remains configured for the protected SMS reminder route. No deployment is started by the application.
