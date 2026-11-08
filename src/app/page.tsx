@@ -26,10 +26,6 @@ export default function HomePage() {
             <br />
             Assessment System
           </h1>
-          <p className="mt-6 max-w-2xl text-base leading-7 text-slate-600">
-            A secure workspace for authorized HR staff, supervisors, and
-            security personnel.
-          </p>
           <Link
             className="mt-8 inline-flex rounded-lg bg-blue-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
             href="/login"

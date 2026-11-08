@@ -118,8 +118,7 @@ function FinalDecisionForm({ detail }: { detail: EvaluationDetail }) {
     <section className="rounded-lg border border-slate-200 p-4">
       <h3 className="font-semibold text-slate-950">Final decision</h3>
       <p className="mt-1 text-sm text-slate-600">
-        Available after Evaluation 3 is completed. The system does not decide Passed or Not Passed.
-        Current: {detail.finalDecision ? `${detail.finalDecision.decision} ${detail.finalDecision.releasedAt ? "(released)" : "(not released)"}` : "Not issued"}
+        The system does not decide Passed or Not Passed. Current: {detail.finalDecision ? `${detail.finalDecision.decision} ${detail.finalDecision.releasedAt ? "(released)" : "(not released)"}` : "Not issued"}
       </p>
       <form action={issue} className="mt-3 grid gap-3">
         <input name="employeeId" type="hidden" value={employeeId} />

@@ -30,9 +30,6 @@ export default async function LoginPage({
         <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-950">
           Sign in to your account
         </h1>
-        <p className="mt-2 text-sm leading-6 text-slate-600">
-          Use your agency account to access your role-specific dashboard.
-        </p>
         {inactive === "1" ? (
           <p
             className="mt-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950"

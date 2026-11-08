@@ -20,9 +20,6 @@ export function SmsLogPanel({ view }: { view: SmsLogView }) {
     <section aria-labelledby="sms-log-heading" className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold text-slate-900" id="sms-log-heading">SMS notifications</h2>
-        <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
-          HR can inspect SMS sent by account creation, evaluation reminders, submissions, released results, and final decisions. Accepted means the provider took the message. Delivered is recorded only from a provider callback.
-        </p>
       </div>
 
       <form action={saveSettings} className="rounded-lg border border-slate-200 p-4">

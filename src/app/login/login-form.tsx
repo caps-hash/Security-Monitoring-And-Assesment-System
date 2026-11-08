@@ -9,7 +9,7 @@ export function LoginForm() {
   const [state, formAction, isPending] = useActionState(signIn, initialState);
 
   return (
-    <form action={formAction} className="mt-8 space-y-5">
+    <form action={formAction} className="mt-6 space-y-5">
       <div>
         <label
           htmlFor="email"

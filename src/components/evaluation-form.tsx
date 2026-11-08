@@ -64,9 +64,6 @@ export function EvaluationForm({
         <Field label="Due date" value={assessment.dueDate} />
         <Field label="Form status" value={assessment.formStatus ?? "Not started"} />
       </dl>
-      <p className="text-sm text-slate-600">
-        Position and department are taken from the assigned post and duty location. SAMS does not store a separate position title.
-      </p>
       {detail.corrections.length ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
           <h3 className="font-semibold">Correction remarks</h3>

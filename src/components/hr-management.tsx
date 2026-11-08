@@ -445,10 +445,7 @@ export function CreateAccountPanel() {
       <h2 className="text-lg font-semibold text-slate-900" id="create-account-heading">
         Create account
       </h2>
-      <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
-        Create an employee or supervisor account. HR does not enter the employee ID.
-      </p>
-      <div className="mt-5">
+      <div className="mt-4">
         <CreateStaffForm />
       </div>
     </section>
@@ -511,10 +508,6 @@ export function EmployeeDirectory({
           <h2 className="text-lg font-semibold text-slate-900" id="employees-heading">
             Personnel
           </h2>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
-            Review employees and supervisors created above. Employee records keep
-            supervisor, post, location, shift, and start date assignment.
-          </p>
         </div>
         <CountBadge>
           {`${personnel.length} personnel`}
@@ -674,16 +667,6 @@ export function SupervisorDirectory({ staff }: { staff: HRStaffMember[] }) {
           <h2 className="text-lg font-semibold text-slate-900" id="supervisors-heading">
             Supervisors
           </h2>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
-            Manage supervisor profiles and account access.{" "}
-            <Link
-              className="font-semibold text-blue-900 hover:text-blue-700"
-              href="/dashboard/hr/personnel"
-            >
-              Create a supervisor from Personnel
-            </Link>{" "}
-            before assigning employees.
-          </p>
         </div>
         <CountBadge>
           {`${supervisors.length} supervisor${supervisors.length === 1 ? "" : "s"}`}

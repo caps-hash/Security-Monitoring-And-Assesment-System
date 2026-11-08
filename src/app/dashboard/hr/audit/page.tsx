@@ -52,9 +52,6 @@ export default async function HrAuditPage({
     <DashboardPlaceholder profile={profile} role="hr">
       <section aria-labelledby="audit-heading">
         <h2 className="text-lg font-semibold text-slate-900" id="audit-heading">Audit log</h2>
-        <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
-          HR can review important account, personnel, assessment, attendance, and SMS events. Passwords and provider credentials are not stored here.
-        </p>
         <form action="/dashboard/hr/audit" className="mt-4 grid gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-4">
           <label className="text-sm font-medium text-slate-700">From<input className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" defaultValue={filters.from} name="from" type="date" /></label>
           <label className="text-sm font-medium text-slate-700">To<input className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" defaultValue={filters.to} name="to" type="date" /></label>

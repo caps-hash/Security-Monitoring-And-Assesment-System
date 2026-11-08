@@ -16,9 +16,8 @@ export function ShiftWorkdaysForm({
       <h2 className="text-lg font-semibold text-slate-900" id="workdays-heading">
         Shift workdays
       </h2>
-      <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
-        Choose the weekdays a shift is expected to work. Leave this unset until the agency confirms
-        the schedule. Unset shifts are not counted as absences.
+      <p className="mt-1 max-w-3xl text-sm leading-6 text-amber-800">
+        Unset shifts are not counted as absences.
       </p>
       <div className="mt-4 space-y-4">
         {shifts.length ? shifts.map((shift) => <ShiftForm key={shift.id} shift={shift} />) : (

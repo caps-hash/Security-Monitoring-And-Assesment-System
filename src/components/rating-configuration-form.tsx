@@ -6,7 +6,6 @@ import {
   saveRatingConfiguration,
   type EvaluationActionState,
 } from "@/app/dashboard/evaluation-actions";
-import { PDF_OVERALL_RATING_REFERENCE } from "@/lib/assessment/criteria";
 import type { RatingConfigurationView } from "@/lib/assessment/evaluation-queries";
 
 const initialState: EvaluationActionState = { error: null, success: null };
@@ -21,8 +20,7 @@ export function RatingConfigurationForm({ configuration }: { configuration: Rati
     <section className="mt-8 rounded-lg border border-slate-200 p-4">
       <h2 className="text-lg font-semibold text-slate-950">Official rating configuration</h2>
       <p className="mt-2 text-sm leading-6 text-slate-600">
-        Supervisor selections are qualitative and are not converted into points. The transcribed form lists overall bands of{" "}
-        {PDF_OVERALL_RATING_REFERENCE.map((band) => `${band.range} ${band.label}`).join(", ")}. Phase 6 also names Outstanding, Very Satisfactory, Satisfactory, Needs Improvement, and Unsatisfactory, but those ranges are not approved. No rating is calculated until HR enters bands and explicitly approves them.
+        No rating is calculated until HR enters bands and explicitly approves them. Supervisor selections are not converted into points.
       </p>
       <p className="mt-2 text-sm text-slate-700">
         Status: {configuration.approved ? "Approved" : "Not approved"}

@@ -7,12 +7,10 @@ import type { MonitorData } from "@/lib/attendance/types";
 export function AttendanceMonitor({
   data,
   basePath,
-  description,
   report,
 }: {
   data: MonitorData;
   basePath: string;
-  description: string;
   report: AttendanceReportView;
 }) {
   return (
@@ -20,7 +18,6 @@ export function AttendanceMonitor({
       <h2 className="text-lg font-semibold text-slate-900" id="attendance-monitor-heading">
         Attendance monitoring
       </h2>
-      <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">{description}</p>
       <AttendanceSummary basePath={basePath} view={report} />
       <form className="mt-4 grid gap-3 lg:grid-cols-5" method="get">
         <input name="period" type="hidden" value="custom" />

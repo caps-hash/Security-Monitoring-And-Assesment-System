@@ -22,51 +22,41 @@ export default async function HrDashboardPage() {
       label: "Employees",
       value: String(employees.length),
       href: "/dashboard/hr/personnel",
-      detail: "Create, edit, and assign personnel",
     },
     {
       label: "Supervisors",
       value: String(supervisors.length),
       href: "/dashboard/hr/supervisors",
-      detail: "Manage supervisor accounts",
     },
     {
       label: "Assigned",
       value: String(assignedEmployees),
       href: "/dashboard/hr/personnel",
-      detail: "Employees with a current assignment",
     },
     {
       label: "Duty options",
       value: String(data.posts.length + data.locations.length + data.shifts.length),
       href: "/dashboard/hr/duty",
-      detail: "Duty assignment management",
     },
     {
       label: "Attendance",
       value: "DTR",
       href: "/dashboard/hr/attendance",
-      detail: "Review time in, time out, and summaries",
     },
     {
       label: "Assessments",
       value: analytics ? String(analytics.overdue) : "Schedule",
       href: "/dashboard/hr/assessment",
-      detail: analytics ? "Overdue evaluations under the Phase 5 status rules" : "Track evaluations and released results",
     },
     {
       label: "SMS",
       value: "Logs",
       href: "/dashboard/hr/sms",
-      detail: "Review notification history and failures",
     },
     {
       label: "Reports",
       value: analytics ? String(analytics.completed) : "Analytics",
       href: "/dashboard/hr/reports",
-      detail: analytics
-        ? `${analytics.passed} passed, ${analytics.notPassed} not passed, ${analytics.potentialAbsences} potential absences this month`
-        : "Personnel, DTR, assessments, and SMS history",
     },
   ];
 
@@ -76,10 +66,6 @@ export default async function HrDashboardPage() {
         <h2 className="text-lg font-semibold text-slate-900" id="overview-heading">
           HR overview
         </h2>
-        <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
-          Manage personnel, supervisors, duty setup, attendance, and assessment
-          schedules. SMS history is on SMS notifications.
-        </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           {summaries.map((summary) => (
             <Link
@@ -93,7 +79,6 @@ export default async function HrDashboardPage() {
               <p className="mt-1 text-2xl font-bold tracking-tight text-slate-950">
                 {summary.value}
               </p>
-              <p className="mt-1 text-sm text-slate-600">{summary.detail}</p>
             </Link>
           ))}
         </div>

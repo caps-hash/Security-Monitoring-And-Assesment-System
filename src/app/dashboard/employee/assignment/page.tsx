@@ -15,9 +15,6 @@ export default async function EmployeeAssignmentPage() {
   return (
     <DashboardPlaceholder profile={profile} role="employee">
       <EmployeeAssignmentDetails assignment={assignment} />
-      <p className="mt-6 border-t border-slate-200 pt-5 text-sm leading-6 text-slate-600">
-        Assignment information is read-only. Contact HR for changes.
-      </p>
     </DashboardPlaceholder>
   );
 }

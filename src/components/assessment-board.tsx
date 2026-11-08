@@ -57,10 +57,6 @@ export function AssessmentBoard({
       <h2 className="text-lg font-semibold text-slate-900" id="assessment-board-heading">
         Assessment schedule
       </h2>
-      <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
-        Statuses come from the saved intervals and tracking workflow. Open an evaluation to
-        complete the official form. Released scores stay hidden until HR releases them.
-      </p>
       {board.message ? <p className="mt-2 text-sm text-amber-800">{board.message}</p> : null}
       <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {Object.entries(board.counts).map(([label, value]) => (

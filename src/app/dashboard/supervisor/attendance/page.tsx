@@ -45,7 +45,6 @@ export default async function SupervisorAttendancePage({
       <AttendanceMonitor
         basePath="/dashboard/supervisor/attendance"
         data={monitor}
-        description="Only personnel assigned to you are listed. Unrelated attendance records are not available here."
         report={report}
       />
     </DashboardPlaceholder>

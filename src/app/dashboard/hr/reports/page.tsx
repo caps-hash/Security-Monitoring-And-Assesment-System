@@ -44,10 +44,6 @@ export default async function HrReportsPage({
             <h2 className="text-lg font-semibold text-slate-900" id="reports-heading">
               Reports and analytics
             </h2>
-            <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
-              HR-only reports use the saved attendance, assessment, decision, and SMS records.
-              Opening a report does not send SMS or change an employment decision.
-            </p>
           </div>
           <p className="text-xs text-slate-500">Generated {loaded.snapshot.generatedAt.slice(0, 16)} UTC</p>
         </div>

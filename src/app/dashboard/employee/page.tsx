@@ -58,10 +58,6 @@ export default async function EmployeeDashboardPage() {
           >
             Assessment status
           </h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            Open Assessment Status for your evaluation schedule. Released scores and
-            the final decision appear there only after HR releases them.
-          </p>
           <Link
             className="mt-3 inline-block text-sm font-semibold text-blue-900 hover:text-blue-700"
             href="/dashboard/employee/assessment"

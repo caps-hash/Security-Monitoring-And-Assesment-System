@@ -16,10 +16,6 @@ export default async function EmployeeSettingsPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Account settings</h2>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
-            Review your account and change your sign-in password. Name, employee
-            number, role, and assignment are managed by HR.
-          </p>
         </div>
         <Link
           className="text-sm font-semibold text-blue-900 hover:text-blue-700"

@@ -115,9 +115,6 @@ export default async function SupervisorDashboardPage() {
       <h2 className="text-lg font-semibold text-slate-900">
         Assigned employees
       </h2>
-      <p className="mt-1 text-sm text-slate-600">
-        You can view only employees assigned to your supervision.
-      </p>
       {staff.length ? (
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           {staff.map(({ profile: employee, assignmentSummary }) => (

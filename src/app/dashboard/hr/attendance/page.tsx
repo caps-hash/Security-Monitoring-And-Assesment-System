@@ -29,7 +29,6 @@ export default async function HrAttendancePage({
       <AttendanceMonitor
         basePath="/dashboard/hr/attendance"
         data={data}
-        description="HR can review attendance for personnel. This page does not approve, correct, or delete records."
         report={report}
       />
     </DashboardPlaceholder>

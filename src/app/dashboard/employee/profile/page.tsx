@@ -66,10 +66,6 @@ export default async function EmployeeProfilePage() {
       <div className="mt-8 border-t border-slate-200 pt-6">
         <EmployeeAssignmentDetails assignment={assignment} />
       </div>
-      <p className="mt-6 border-t border-slate-200 pt-5 text-sm leading-6 text-slate-600">
-        Profile and assignment information are managed by HR. Contact HR if
-        anything needs to be corrected.
-      </p>
     </DashboardPlaceholder>
   );
 }

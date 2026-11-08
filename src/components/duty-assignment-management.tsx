@@ -310,10 +310,6 @@ export function DutyAssignmentManagement({
           >
             Duty Assignment Management
           </h2>
-          <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
-            Save a post, duty location, and duty shift together. This does not
-            create or change an employee assignment.
-          </p>
         </div>
         <button
           className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-800"
@@ -639,10 +635,6 @@ export function DutyAssignmentManagement({
           <h3 className="text-base font-semibold text-slate-900">
             Records not in a configuration
           </h3>
-          <p className="mt-1 text-sm leading-6 text-slate-600">
-            These posts, locations, or shifts are not paired with the other two
-            records. Add one to the form instead of creating a duplicate.
-          </p>
           <ul className="mt-3 divide-y divide-slate-100">
             {unlinked.map((record) => (
               <li
