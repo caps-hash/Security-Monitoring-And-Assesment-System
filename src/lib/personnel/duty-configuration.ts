@@ -55,6 +55,44 @@ export function validateDutyConfigurationInput(
   return null;
 }
 
+export type DutyEditorSource = {
+  id: string | null;
+  postId: string;
+  locationId: string;
+  shiftId: string;
+  postName: string;
+  postDescription: string | null;
+  locationName: string;
+  locationAddress: string | null;
+  shiftName: string;
+  startTime: string;
+  endTime: string;
+  postActive: boolean;
+  locationActive: boolean;
+  shiftActive: boolean;
+};
+
+export function dutyEditorDraft(record: DutyEditorSource) {
+  return {
+    configurationId: record.id ?? "",
+    postId: record.postId,
+    locationId: record.locationId,
+    shiftId: record.shiftId,
+    postName: record.postName,
+    postDescription: record.postDescription ?? "",
+    locationName: record.locationName,
+    locationAddress: record.locationAddress ?? "",
+    shiftName: record.shiftName,
+    startTime: normalizeClockTime(record.startTime),
+    endTime: normalizeClockTime(record.endTime),
+    isActive: dutyOptionsAvailable(
+      record.postActive,
+      record.locationActive,
+      record.shiftActive,
+    ),
+  };
+}
+
 export function dutyOptionsAvailable(
   postActive: boolean,
   locationActive: boolean,

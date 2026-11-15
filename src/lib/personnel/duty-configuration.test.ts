@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  dutyEditorDraft,
   dutyOptionsAvailable,
   formatShiftWindow,
   isOvernightShift,
@@ -37,6 +38,40 @@ test("accepts an overnight shift and rejects incomplete duty details", () => {
     "End time must differ from start time. Use an earlier end time for an overnight shift.",
   );
   assert.equal(dutyOptionsAvailable(true, true, false), false);
+});
+
+test("loads an existing duty configuration for editing without changing its identity", () => {
+  const draft = dutyEditorDraft({
+    id: "configuration-1",
+    postId: "post-1",
+    locationId: "location-1",
+    shiftId: "shift-1",
+    postName: "Main gate",
+    postDescription: "Front entrance",
+    locationName: "Head office",
+    locationAddress: "1 Main Street",
+    shiftName: "Morning shift",
+    startTime: "08:00:00",
+    endTime: "16:00:00",
+    postActive: true,
+    locationActive: true,
+    shiftActive: true,
+  });
+
+  assert.deepEqual(draft, {
+    configurationId: "configuration-1",
+    postId: "post-1",
+    locationId: "location-1",
+    shiftId: "shift-1",
+    postName: "Main gate",
+    postDescription: "Front entrance",
+    locationName: "Head office",
+    locationAddress: "1 Main Street",
+    shiftName: "Morning shift",
+    startTime: "08:00",
+    endTime: "16:00",
+    isActive: true,
+  });
 });
 
 test("warns before a shared edit or deactivation used by assignments", () => {

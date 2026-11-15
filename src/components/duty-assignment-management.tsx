@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import {
   saveDutyConfiguration,
   setDutyConfigurationActive,
@@ -8,10 +8,10 @@ import {
   type DutyActionState,
 } from "@/app/dashboard/hr/actions";
 import {
+  dutyEditorDraft,
   dutyOptionsAvailable,
   formatShiftWindow,
   isOvernightShift,
-  normalizeClockTime,
   sharedDutyWarning,
 } from "@/lib/personnel/duty-configuration";
 import type {
@@ -59,24 +59,7 @@ const emptyDraft: Draft = {
 };
 
 function draftFrom(record: DutyConfigurationRecord): Draft {
-  return {
-    configurationId: record.id ?? "",
-    postId: record.postId,
-    locationId: record.locationId,
-    shiftId: record.shiftId,
-    postName: record.postName,
-    postDescription: record.postDescription ?? "",
-    locationName: record.locationName,
-    locationAddress: record.locationAddress ?? "",
-    shiftName: record.shiftName,
-    startTime: normalizeClockTime(record.startTime),
-    endTime: normalizeClockTime(record.endTime),
-    isActive: dutyOptionsAvailable(
-      record.postActive,
-      record.locationActive,
-      record.shiftActive,
-    ),
-  };
+  return dutyEditorDraft(record);
 }
 
 function recordKey(record: DutyConfigurationRecord): string {
@@ -167,6 +150,8 @@ export function DutyAssignmentManagement({
   );
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [appliedSuccess, setAppliedSuccess] = useState<string | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const editorRef = useRef<HTMLDialogElement>(null);
   const dirty = JSON.stringify(draft) !== baseline;
   const readOnly = mode === "view";
   const busy = pending || statusPending;
@@ -212,14 +197,44 @@ export function DutyAssignmentManagement({
   ) {
     const match = configurations.find((item) => item.id === state.configurationId);
     if (match) {
-      const next = draftFrom(match);
       setAppliedSuccess(state.success);
-      setDraft(next);
-      setBaseline(JSON.stringify(next));
-      setMode("edit");
-      setSelectedKey(recordKey(match));
+      const editingAnotherRecord =
+        editorOpen &&
+        draft.configurationId !== "" &&
+        draft.configurationId !== state.configurationId;
+      if (!editingAnotherRecord) {
+        const next = draftFrom(match);
+        setDraft(next);
+        setBaseline(JSON.stringify(next));
+        setMode("edit");
+        setSelectedKey(recordKey(match));
+        setEditorOpen(false);
+      }
     }
   }
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) {
+      return;
+    }
+    if (editorOpen) {
+      if (!editor.open) {
+        editor.showModal();
+      }
+      if (mode !== "view") {
+        editor
+          .querySelector<HTMLInputElement>(
+            "input:not([type='hidden']):not([type='checkbox'])",
+          )
+          ?.focus();
+      }
+      return;
+    }
+    if (editor.open) {
+      editor.close();
+    }
+  }, [editorOpen, mode, selectedKey]);
 
   function updateDraft(patch: Partial<Draft>) {
     setDraft((current) => ({ ...current, ...patch }));
@@ -238,6 +253,15 @@ export function DutyAssignmentManagement({
     setBaseline(JSON.stringify(next));
     setMode(nextMode);
     setSelectedKey(recordKey(record));
+    setEditorOpen(true);
+  }
+
+  function closeEditor() {
+    if (pending || !confirmDiscard()) {
+      return;
+    }
+    setDraft(JSON.parse(baseline) as Draft);
+    setEditorOpen(false);
   }
 
   function startNew() {
@@ -248,6 +272,7 @@ export function DutyAssignmentManagement({
     setBaseline(JSON.stringify(emptyDraft));
     setMode("create");
     setSelectedKey(null);
+    setEditorOpen(true);
   }
 
   function applyUnlinked(record: UnlinkedDutyRecord) {
@@ -270,6 +295,7 @@ export function DutyAssignmentManagement({
     setBaseline(JSON.stringify(emptyDraft));
     setMode("create");
     setSelectedKey(null);
+    setEditorOpen(true);
   }
 
   const normalizedQuery = query.trim().toLowerCase();
@@ -320,10 +346,22 @@ export function DutyAssignmentManagement({
         </button>
       </div>
 
+      <dialog
+        aria-labelledby="duty-configuration-editor-heading"
+        className="w-[min(72rem,calc(100vw-2rem))] max-h-[calc(100vh-2rem)] overflow-y-auto rounded-xl border border-slate-200 bg-white p-0 text-slate-900 shadow-xl open:m-auto backdrop:bg-slate-950/40"
+        id="duty-configuration-editor"
+        onCancel={(event) => {
+          event.preventDefault();
+          closeEditor();
+        }}
+        onClose={() => setEditorOpen(false)}
+        ref={editorRef}
+      >
       <form
         action={formAction}
         aria-busy={pending}
-        className="mt-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+        className="p-5"
+        id="duty-configuration-form"
         onSubmit={(event) => {
           if (readOnly) {
             event.preventDefault();
@@ -344,13 +382,28 @@ export function DutyAssignmentManagement({
         <input name="post_id" type="hidden" value={draft.postId} />
         <input name="location_id" type="hidden" value={draft.locationId} />
         <input name="shift_id" type="hidden" value={draft.shiftId} />
-        <p className="text-sm font-semibold text-slate-900">
-          {mode === "create"
-            ? "New duty configuration"
-            : mode === "view"
-              ? "View duty configuration"
-              : "Edit duty configuration"}
-        </p>
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-sm font-semibold text-slate-900" id="duty-configuration-editor-heading">
+            {mode === "create"
+              ? "New duty configuration"
+              : mode === "view"
+                ? "View duty configuration"
+                : "Edit duty configuration"}
+          </p>
+          <button
+            className="rounded-md px-2 py-1 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-800 disabled:opacity-60"
+            disabled={pending}
+            onClick={closeEditor}
+            type="button"
+          >
+            Close
+          </button>
+        </div>
+        {pending ? (
+          <p aria-live="polite" className="mt-3 text-sm text-slate-600" role="status">
+            Saving changes...
+          </p>
+        ) : null}
         <div className="mt-4 grid gap-6 lg:grid-cols-3">
           <fieldset className="min-w-0 space-y-3">
             <legend className="text-sm font-semibold text-slate-900">Post information</legend>
@@ -475,14 +528,26 @@ export function DutyAssignmentManagement({
               {pending ? "Saving..." : "Save Changes"}
             </button>
           )}
-          <Feedback error={state.error} success={state.success} />
+          <Feedback
+            error={state.error}
+            success={
+              state.configurationId &&
+              state.configurationId !== draft.configurationId
+                ? null
+                : state.success
+            }
+          />
         </div>
       </form>
+      </dialog>
 
       <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <h3 className="text-base font-semibold text-slate-900">Saved configurations</h3>
-          <Feedback error={statusState.error} success={statusState.success} />
+          <div className="space-y-1">
+            {editorOpen ? null : <Feedback error={state.error} success={state.success} />}
+            <Feedback error={statusState.error} success={statusState.success} />
+          </div>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_12rem]">
           <label className="block text-sm font-medium text-slate-700">
@@ -543,7 +608,14 @@ export function DutyAssignmentManagement({
                     deactivating: available,
                   });
                   return (
-                    <tr className="border-b border-slate-100 align-top" key={recordKey(item)}>
+                    <tr
+                      className={
+                        recordKey(item) === selectedKey
+                          ? "border-b border-blue-100 bg-blue-50 align-top"
+                          : "border-b border-slate-100 align-top"
+                      }
+                      key={recordKey(item)}
+                    >
                       <td className="px-2 py-3 font-medium text-slate-900">{item.postName}</td>
                       <td className="px-2 py-3 text-slate-700">
                         {item.locationName}
@@ -572,12 +644,16 @@ export function DutyAssignmentManagement({
                         <div className="flex flex-wrap gap-2">
                           <button
                             className="rounded-md px-2 py-1 font-semibold text-blue-900 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-800"
+                            aria-controls="duty-configuration-editor"
+                            aria-haspopup="dialog"
                             onClick={() => loadRecord(item, "view")}
                             type="button"
                           >
                             View
                           </button>
                           <button
+                            aria-controls="duty-configuration-editor"
+                            aria-haspopup="dialog"
                             className="rounded-md px-2 py-1 font-semibold text-blue-900 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-800"
                             onClick={() => loadRecord(item, "edit")}
                             type="button"
@@ -625,7 +701,7 @@ export function DutyAssignmentManagement({
           <p className="mt-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
             {configurations.length
               ? "No configurations match this search or status filter."
-              : "No duty configurations yet. Enter a post, location, and shift, then choose Save Changes."}
+              : "No duty configurations yet. Choose New configuration, then enter a post, location, and shift."}
           </p>
         )}
       </div>
